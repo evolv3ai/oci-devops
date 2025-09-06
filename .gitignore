@@ -1,0 +1,49 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Sensitive files
+*.pem
+*.key
+*_rsa
+*_rsa.pub
+.oci/
+*.ocid
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Semaphore specific
+semaphore-config/
+semaphore-database/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

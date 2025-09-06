@@ -1,0 +1,51 @@
+services:
+  postgres:
+    restart: unless-stopped
+    image: postgres:14
+    volumes:
+      - semaphore-postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=semaphore
+      - POSTGRES_PASSWORD=secure-db-password-change-me
+      - POSTGRES_DB=semaphore
+    networks:
+      - semaphore-network
+
+  semaphore:
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    image: semaphoreui/semaphore:latest
+    environment:
+      # Database Configuration
+      - SEMAPHORE_DB_USER=semaphore
+      - SEMAPHORE_DB_PASS=secure-db-password-change-me
+      - SEMAPHORE_DB_HOST=postgres
+      - SEMAPHORE_DB_PORT=5432
+      - SEMAPHORE_DB_DIALECT=postgres
+      - SEMAPHORE_DB=semaphore
+      
+      # Admin Account (Change these!)
+      - SEMAPHORE_ADMIN_PASSWORD=admin
+      - SEMAPHORE_ADMIN_NAME=Admin User
+      - SEMAPHORE_ADMIN_EMAIL=admin@yourcompany.com
+      - SEMAPHORE_ADMIN=admin
+      
+      # Security
+      - SEMAPHORE_ACCESS_KEY_ENCRYPTION=T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT08=
+      
+      # Optional
+      - TZ=America/New_York
+    volumes:
+      - semaphore-config:/etc/semaphore
+    depends_on:
+      - postgres
+    networks:
+      - semaphore-network
+
+volumes:
+  semaphore-postgres:
+  semaphore-config:
+
+networks:
+  semaphore-network:

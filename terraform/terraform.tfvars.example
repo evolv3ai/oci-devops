@@ -1,0 +1,30 @@
+# Example Terraform Variables
+# Copy this file to terraform.tfvars and fill in your actual values
+
+# OCI Authentication
+tenancy_ocid     = "ocid1.tenancy.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+user_ocid        = "ocid1.user.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+fingerprint      = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+private_key_path = "/home/semaphore/.oci/oci_api_key.pem"
+region           = "us-ashburn-1"
+compartment_id   = "ocid1.compartment.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# SSH Configuration
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... your-ssh-public-key-content-here"
+
+# Instance Configuration
+instance_count       = 1
+instance_name_prefix = "semaphore-instance"
+instance_shape       = "VM.Standard.E2.1.Micro"  # Always Free tier
+assign_public_ip     = true
+environment          = "development"
+
+# Network Configuration
+create_vcn = true
+
+# Tags
+common_tags = {
+  Environment = "development"
+  Project     = "semaphore-automation"
+  CreatedBy   = "terraform"
+}

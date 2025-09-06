@@ -1,0 +1,54 @@
+---
+# Basic OCI instance configuration playbook
+- name: Configure Oracle Cloud Infrastructure instances
+  hosts: oci_all
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Update system packages
+      package:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+    
+    - name: Update apt packages (Ubuntu)
+      apt:
+        upgrade: dist
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Install common packages
+      package:
+        name:
+          - htop
+          - curl
+          - wget
+          - vim
+          - git
+        state: present
+    
+    - name: Configure firewall (Oracle Linux)
+      firewalld:
+        service: ssh
+        permanent: yes
+        state: enabled
+        immediate: yes
+      when: ansible_os_family == "RedHat"
+    
+    - name: Ensure SSH service is running
+      service:
+        name: sshd
+        state: started
+        enabled: yes
+    
+    - name: Create application user
+      user:
+        name: appuser
+        groups: wheel
+        shell: /bin/bash
+        create_home: yes
+      
+    - name: Set timezone
+      timezone:
+        name: America/New_York
