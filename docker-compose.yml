@@ -37,7 +37,9 @@ services:
       # Optional
       - TZ=America/New_York
     volumes:
-      - ~/.oci:/oci:ro  # Mount your .oci folder as read-only
+      # OCI Configuration - choose one:
+      - ~/.oci:/oci:ro                      # Mount at /oci (legacy)
+      - ~/.oci:/home/semaphore/.oci:ro      # Mount at standard location
       - semaphore-data:/var/lib/semaphore
       - semaphore-config:/etc/semaphore
       - semaphore-tmp:/tmp/semaphore
@@ -48,9 +50,9 @@ services:
 
 volumes:
   semaphore-postgres:
-  semaphore-config:  # Changed from semaphore_config
-  semaphore-data:    # Changed from semaphore_data
-  semaphore-tmp:     # Changed from semaphore_tmp
+  semaphore-config:
+  semaphore-data:
+  semaphore-tmp:
 
 networks:
   semaphore-network:
