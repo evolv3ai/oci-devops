@@ -1,8 +1,0 @@
-# terraform/terraform.tfvars
-tenancy_ocid     = "ocid1.tenancy.oc1..aaaaaaaapd5npnnso46elgffh3bfcesl5h7cu7u62obuxinqcnzkw3o7tgwa"
-user_ocid        = "ocid1.user.oc1..aaaaaaaa6mpo4ki3rtwec4gt3zezuqz4j4j7voiegompjdxzzun2b64ylnua"
-fingerprint      = "2b:d5:03:cf:b2:d8:d9:c4:cc:18:80:dd:7f:3a:60:87"
-region           = "us-ashburn-1"
-compartment_id   = "ocid1.compartment.oc1..aaaaaaaae5v3sal4r6df2hrucviwerue5k3trdiln5buhh7wggjjgw2f7wua"
-ssh_public_key   = "ssh-rsa AAAAB3NzaC1yc2E... your-key-here"  # Fix this
-private_key_path = "C:\\Users\\Owner\\.ssh\\oci_devops"
