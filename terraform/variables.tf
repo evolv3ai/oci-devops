@@ -1,6 +1,26 @@
 # Input Variables for OCI Terraform Configuration
 
 # OCI Provider Configuration
+variable "tenancy_ocid" {
+  description = "OCID of the tenancy"
+  type        = string
+}
+
+variable "user_ocid" {
+  description = "OCID of the user"
+  type        = string
+}
+
+variable "fingerprint" {
+  description = "Fingerprint of the public key"
+  type        = string
+}
+
+variable "private_key_path" {
+  description = "Path to the private key"
+  type        = string
+}
+
 variable "region" {
   description = "OCI region"
   type        = string

@@ -10,9 +10,18 @@ terraform {
 
 # Configure the Oracle Cloud Infrastructure Provider
 provider "oci" {
-  config_file_profile = "DEFAULT"
-  # Authentication via TF_VAR_oci_cli_config = /oci/config (mounted from ~/.oci)
-  region = var.region
+  # Authentication will be provided via environment variables:
+  # TF_VAR_tenancy_ocid
+  # TF_VAR_user_ocid
+  # TF_VAR_fingerprint
+  # TF_VAR_private_key_path
+  # TF_VAR_region
+  
+  tenancy_ocid     = var.tenancy_ocid
+  user_ocid        = var.user_ocid
+  fingerprint      = var.fingerprint
+  private_key_path = var.private_key_path
+  region           = var.region
 }
 
 # Data sources for existing infrastructure
