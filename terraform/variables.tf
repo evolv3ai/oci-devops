@@ -1,26 +1,6 @@
 # Input Variables for OCI Terraform Configuration
 
 # OCI Provider Configuration
-variable "tenancy_ocid" {
-  description = "OCID of the tenancy"
-  type        = string
-}
-
-variable "user_ocid" {
-  description = "OCID of the user"
-  type        = string
-}
-
-variable "fingerprint" {
-  description = "Fingerprint of the public key"
-  type        = string
-}
-
-variable "private_key_path" {
-  description = "Path to the private key"
-  type        = string
-}
-
 variable "region" {
   description = "OCI region"
   type        = string
@@ -61,19 +41,19 @@ variable "instance_name_prefix" {
 variable "instance_shape" {
   description = "Shape of the instance"
   type        = string
-  default     = "VM.Standard.E2.1.Micro" # Always Free tier eligible
+  default     = "VM.Standard.A1.Flex" # Always Free tier Ampere A1 eligible
 }
 
 variable "instance_memory" {
   description = "Memory in GBs for flexible shapes"
   type        = number
-  default     = 1
+  default     = 12
 }
 
 variable "instance_ocpus" {
   description = "Number of OCPUs for flexible shapes"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "assign_public_ip" {
@@ -111,7 +91,6 @@ variable "environment" {
   type        = string
   default     = "development"
 }
-
 
 # Fallback Image Configuration
 variable "fallback_image_ocid" {

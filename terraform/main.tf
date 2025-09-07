@@ -10,18 +10,9 @@ terraform {
 
 # Configure the Oracle Cloud Infrastructure Provider
 provider "oci" {
-  # Authentication will be provided via environment variables:
-  # TF_VAR_tenancy_ocid
-  # TF_VAR_user_ocid  
-  # TF_VAR_fingerprint
-  # TF_VAR_private_key_path
-  # TF_VAR_region
-  
-  tenancy_ocid     = var.tenancy_ocid
-  user_ocid        = var.user_ocid
-  fingerprint      = var.fingerprint
-  private_key_path = var.private_key_path
-  region           = var.region
+  config_file_profile = "DEFAULT"
+  # Authentication via TF_VAR_oci_cli_config = /oci/config (mounted from ~/.oci)
+  region = var.region
 }
 
 # Data sources for existing infrastructure
@@ -39,17 +30,18 @@ data "oci_core_images" "oracle_linux" {
   
   filter {
     name   = "operating_system_version"
-    values = ["8.9", "8.8", "9.3"]  # Current stable versions
-  }
-  
-  filter {
-    name   = "shape"
-    values = [var.instance_shape]  # Must match the instance shape
+    values = ["8"]  # Broad for OL8
   }
   
   filter {
     name   = "state"
     values = ["AVAILABLE"]
+  }
+
+  filter {
+    name   = "display-name"
+    values = ["Oracle-Linux-8.*-2024.*-.*"]
+    regex  = true
   }
   
   sort_by    = "TIMECREATED"
@@ -144,6 +136,17 @@ resource "oci_core_security_list" "semaphore_sl" {
     }
   }
 
+  # Allow Coolify UI (port 3000)
+  ingress_security_rules {
+    protocol = "6" # TCP
+    source   = "0.0.0.0/0"
+    
+    tcp_options {
+      min = 3000
+      max = 3000
+    }
+  }
+
   # Allow all outbound traffic
   egress_security_rules {
     protocol    = "all"
@@ -167,27 +170,23 @@ resource "oci_core_subnet" "semaphore_subnet" {
   freeform_tags = var.common_tags
 }
 
-# Create Compute Instance
-resource "oci_core_instance" "semaphore_instance" {
-  count               = var.instance_count
+# Create KASM Compute Instance
+resource "oci_core_instance" "kasm" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
-  display_name        = "${var.instance_name_prefix}-${count.index + 1}"
+  display_name        = "kasm-server"
   shape               = var.instance_shape
 
   # Shape configuration for flexible shapes
-  dynamic "shape_config" {
-    for_each = length(regexall("Flex", var.instance_shape)) > 0 ? [1] : []
-    content {
-      memory_in_gbs = var.instance_memory
-      ocpus         = var.instance_ocpus
-    }
+  shape_config {
+    memory_in_gbs = var.instance_memory
+    ocpus         = var.instance_ocpus
   }
 
   create_vnic_details {
-    subnet_id                 = var.create_vcn ? oci_core_subnet.semaphore_subnet[0].id : var.existing_subnet_id
-    display_name              = "${var.instance_name_prefix}-vnic-${count.index + 1}"
-    assign_public_ip          = var.assign_public_ip
+    subnet_id        = var.create_vcn ? oci_core_subnet.semaphore_subnet[0].id : var.existing_subnet_id
+    display_name     = "kasm-vnic"
+    assign_public_ip = var.assign_public_ip
     assign_private_dns_record = true
   }
 
@@ -204,10 +203,89 @@ resource "oci_core_instance" "semaphore_instance" {
   }
 
   freeform_tags = merge(var.common_tags, {
-    "Instance" = "${var.instance_name_prefix}-${count.index + 1}"
+    "Instance" = "kasm-server"
   })
 
   timeouts {
     create = "60m"
   }
+}
+
+# Create Coolify Compute Instance
+resource "oci_core_instance" "coolify" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_id
+  display_name        = "coolify-server"
+  shape               = var.instance_shape
+
+  # Shape configuration for flexible shapes
+  shape_config {
+    memory_in_gbs = var.instance_memory
+    ocpus         = var.instance_ocpus
+  }
+
+  create_vnic_details {
+    subnet_id        = var.create_vcn ? oci_core_subnet.semaphore_subnet[0].id : var.existing_subnet_id
+    display_name     = "coolify-vnic"
+    assign_public_ip = var.assign_public_ip
+    assign_private_dns_record = true
+  }
+
+  source_details {
+    source_type = "image"
+    source_id   = local.instance_image_id
+  }
+
+  metadata = {
+    ssh_authorized_keys = var.ssh_public_key
+    user_data = base64encode(templatefile("${path.module}/cloud-init.yml", {
+      ssh_public_key = var.ssh_public_key
+    }))
+  }
+
+  freeform_tags = merge(var.common_tags, {
+    "Instance" = "coolify-server"
+  })
+
+  timeouts {
+    create = "60m"
+  }
+}
+
+# Create Block Volume for KASM
+resource "oci_core_volume" "kasm_volume" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_id
+  size_in_gbs         = 60
+  display_name        = "kasm-volume"
+
+  freeform_tags = merge(var.common_tags, {
+    "VolumeFor" = "kasm-server"
+  })
+}
+
+# Attach Block Volume to KASM Instance
+resource "oci_core_volume_attachment" "kasm_attachment" {
+  attachment_type = "iscsi"
+  instance_id     = oci_core_instance.kasm.id
+  volume_id       = oci_core_volume.kasm_volume.id
+}
+
+# Create Block Volume for Coolify
+resource "oci_core_volume" "coolify_volume" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_id
+  size_in_gbs         = 100
+  display_name        = "coolify-volume"
+
+  freeform_tags = merge(var.common_tags, {
+    "VolumeFor" = "coolify-server"
+  })
+}
+
+# Attach Block Volume to Coolify Instance
+resource "oci_core_volume_attachment" "coolify_attachment" {
+  attachment_type = "iscsi"
+  instance_id     = oci_core_instance.coolify.id
+  volume_id       = oci_core_volume.coolify_volume.id
 }

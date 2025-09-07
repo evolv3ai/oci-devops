@@ -1,40 +1,65 @@
 # Terraform Outputs - These will be captured by Semaphore
 
 # Instance Information
-output "instance_ids" {
-  description = "OCIDs of the created instances"
-  value       = oci_core_instance.semaphore_instance[*].id
+output "kasm_instance_id" {
+  description = "OCID of the KASM instance"
+  value       = oci_core_instance.kasm.id
+}
+
+output "coolify_instance_id" {
+  description = "OCID of the Coolify instance"
+  value       = oci_core_instance.coolify.id
 }
 
 output "instance_public_ips" {
   description = "Public IP addresses of the instances"
-  value       = oci_core_instance.semaphore_instance[*].public_ip
+  value       = [oci_core_instance.kasm.public_ip, oci_core_instance.coolify.public_ip]
 }
 
 output "instance_private_ips" {
   description = "Private IP addresses of the instances"
-  value       = oci_core_instance.semaphore_instance[*].private_ip
+  value       = [oci_core_instance.kasm.private_ip, oci_core_instance.coolify.private_ip]
 }
 
 output "instance_display_names" {
   description = "Display names of the instances"
-  value       = oci_core_instance.semaphore_instance[*].display_name
+  value       = ["kasm-server", "coolify-server"]
 }
 
-# Primary instance outputs (for single instance deployments)
+output "kasm_public_ip" {
+  description = "Public IP of the KASM instance"
+  value       = oci_core_instance.kasm.public_ip
+}
+
+output "coolify_public_ip" {
+  description = "Public IP of the Coolify instance"
+  value       = oci_core_instance.coolify.public_ip
+}
+
+output "kasm_private_ip" {
+  description = "Private IP of the KASM instance"
+  value       = oci_core_instance.kasm.private_ip
+}
+
+output "coolify_private_ip" {
+  description = "Private IP of the Coolify instance"
+  value       = oci_core_instance.coolify.private_ip
+}
+
+# Primary instance outputs (KASM as primary)
 output "primary_instance_id" {
-  description = "OCID of the primary instance"
-  value       = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].id : null
+  description = "OCID of the primary (KASM) instance"
+  value       = oci_core_instance.kasm.id
 }
 
 output "primary_public_ip" {
-  description = "Public IP of the primary instance"
-  value       = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].public_ip : null
+  description = "Public IP of the primary (KASM) instance"
+  value       = oci_core_instance.kasm.public_ip
 }
 
 output "primary_private_ip" {
-  description = "Private IP of the primary instance"
-  value       = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].private_ip : null
+  description = "Private IP of the primary (KASM) instance"
+  value       = oci_core_instance.kasm.private_ip
 }
 
 # Network Information
@@ -52,13 +77,17 @@ output "subnet_id" {
 output "ansible_inventory_vars" {
   description = "Variables for Ansible inventory in JSON format"
   value = jsonencode({
-    oci_instance_ips    = oci_core_instance.semaphore_instance[*].public_ip
-    oci_private_ips     = oci_core_instance.semaphore_instance[*].private_ip
-    oci_instance_ids    = oci_core_instance.semaphore_instance[*].id
-    oci_display_names   = oci_core_instance.semaphore_instance[*].display_name
-    primary_public_ip   = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].public_ip : ""
-    primary_private_ip  = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].private_ip : ""
-    instance_count      = var.instance_count
+    oci_instance_ips    = [oci_core_instance.kasm.public_ip, oci_core_instance.coolify.public_ip]
+    oci_private_ips     = [oci_core_instance.kasm.private_ip, oci_core_instance.coolify.private_ip]
+    oci_instance_ids    = [oci_core_instance.kasm.id, oci_core_instance.coolify.id]
+    oci_display_names   = ["kasm-server", "coolify-server"]
+    primary_public_ip   = oci_core_instance.kasm.public_ip
+    primary_private_ip  = oci_core_instance.kasm.private_ip
+    kasm_public_ip      = oci_core_instance.kasm.public_ip
+    kasm_private_ip     = oci_core_instance.kasm.private_ip
+    coolify_public_ip   = oci_core_instance.coolify.public_ip
+    coolify_private_ip  = oci_core_instance.coolify.private_ip
+    instance_count      = 2
     environment         = var.environment
     region              = var.region
   })
@@ -68,8 +97,8 @@ output "ansible_inventory_vars" {
 output "ssh_commands" {
   description = "SSH commands to connect to instances"
   value = [
-    for i, instance in oci_core_instance.semaphore_instance :
-    "ssh -i ~/.ssh/semaphore-oci-key opc@${instance.public_ip}"
+    "ssh -i ~/.ssh/semaphore-oci-key opc@${oci_core_instance.kasm.public_ip}",
+    "ssh -i ~/.ssh/semaphore-oci-key opc@${oci_core_instance.coolify.public_ip}"
   ]
 }
 
@@ -77,9 +106,13 @@ output "ssh_commands" {
 output "semaphore_env_vars" {
   description = "Environment variables to update in Semaphore"
   value = {
-    TF_VAR_primary_public_ip  = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].public_ip : ""
-    TF_VAR_primary_private_ip = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].private_ip : ""
-    TF_VAR_instance_count     = var.instance_count
+    TF_VAR_kasm_public_ip     = oci_core_instance.kasm.public_ip
+    TF_VAR_kasm_private_ip    = oci_core_instance.kasm.private_ip
+    TF_VAR_coolify_public_ip  = oci_core_instance.coolify.public_ip
+    TF_VAR_coolify_private_ip = oci_core_instance.coolify.private_ip
+    TF_VAR_primary_public_ip  = oci_core_instance.kasm.public_ip
+    TF_VAR_primary_private_ip = oci_core_instance.kasm.private_ip
+    TF_VAR_instance_count     = 2
     TF_VAR_region             = var.region
     TF_VAR_environment        = var.environment
   }
@@ -88,11 +121,22 @@ output "semaphore_env_vars" {
 # Instance State
 output "instance_state" {
   description = "State of the instances"
-  value       = oci_core_instance.semaphore_instance[*].state
+  value       = [oci_core_instance.kasm.state, oci_core_instance.coolify.state]
 }
 
 # Availability Domain
 output "availability_domain" {
   description = "Availability domain of the instances"
-  value       = length(oci_core_instance.semaphore_instance) > 0 ? oci_core_instance.semaphore_instance[0].availability_domain : null
+  value       = data.oci_identity_availability_domains.ads.availability_domains[0].name
+}
+
+# Volume Information
+output "kasm_volume_id" {
+  description = "OCID of the KASM block volume"
+  value       = oci_core_volume.kasm_volume.id
+}
+
+output "coolify_volume_id" {
+  description = "OCID of the Coolify block volume"
+  value       = oci_core_volume.coolify_volume.id
 }
