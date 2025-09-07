@@ -1,120 +1,117 @@
-# Input Variables for OCI Terraform Configuration
-
-# OCI Provider Configuration
+# OCI Provider Authentication Variables
 variable "tenancy_ocid" {
-  description = "OCID of the tenancy"
+  description = "OCI Tenancy OCID"
   type        = string
 }
 
 variable "user_ocid" {
-  description = "OCID of the user"
+  description = "OCI User OCID"
   type        = string
 }
 
 variable "fingerprint" {
-  description = "Fingerprint of the public key"
+  description = "OCI API Key Fingerprint"
   type        = string
 }
 
 variable "private_key_path" {
-  description = "Path to the private key"
+  description = "Path to OCI Private Key"
   type        = string
+  default     = "/oci/oci_api_key.pem"
 }
 
 variable "region" {
-  description = "OCI region"
+  description = "OCI Region"
   type        = string
   default     = "us-ashburn-1"
 }
 
+variable "auth_token" {
+  description = "OCI Auth Token (optional)"
+  type        = string
+  default     = ""
+}
+
+# Resource Configuration Variables
 variable "compartment_id" {
-  description = "OCID of the compartment"
+  description = "OCI Compartment OCID for resources"
   type        = string
 }
 
-# Network Configuration
-variable "create_vcn" {
-  description = "Whether to create a new VCN or use existing"
-  type        = bool
-  default     = true
-}
-
-variable "existing_subnet_id" {
-  description = "OCID of existing subnet (if create_vcn is false)"
+variable "ssh_public_key" {
+  description = "SSH Public Key for instance access"
   type        = string
-  default     = null
 }
 
-# Instance Configuration
-variable "instance_count" {
-  description = "Number of instances to create"
-  type        = number
-  default     = 1
-}
-
-variable "instance_name_prefix" {
-  description = "Prefix for instance names"
+variable "oci_cli_config" {
+  description = "Path to OCI CLI config file"
   type        = string
-  default     = "semaphore-instance"
+  default     = "/oci/config"
 }
 
+# Instance Configuration Variables
 variable "instance_shape" {
-  description = "Shape of the instance"
+  description = "Shape for compute instances"
   type        = string
-  default     = "VM.Standard.A1.Flex" # Always Free tier Ampere A1 eligible
-}
-
-variable "instance_memory" {
-  description = "Memory in GBs for flexible shapes"
-  type        = number
-  default     = 12
+  default     = "VM.Standard.A1.Flex"
 }
 
 variable "instance_ocpus" {
-  description = "Number of OCPUs for flexible shapes"
+  description = "Number of OCPUs for flexible instances"
   type        = number
   default     = 2
 }
 
-variable "assign_public_ip" {
-  description = "Whether to assign a public IP to the instance"
+variable "instance_memory" {
+  description = "Memory in GB for flexible instances"
+  type        = number
+  default     = 12
+}
+
+# Network Configuration Variables
+variable "create_vcn" {
+  description = "Whether to create a new VCN"
   type        = bool
   default     = true
 }
 
-# SSH Configuration
-variable "ssh_public_key" {
-  description = "SSH public key for instance access"
+variable "vcn_cidr" {
+  description = "CIDR block for VCN"
   type        = string
+  default     = "10.0.0.0/16"
 }
 
-# Tagging
-variable "common_tags" {
-  description = "Common tags to apply to all resources"
-  type        = map(string)
-  default = {
-    Environment = "development"
-    Project     = "semaphore-automation"
-    CreatedBy   = "terraform"
-  }
-}
-
-# Application Configuration
-variable "app_port" {
-  description = "Port for application"
-  type        = number
-  default     = 8080
-}
-
-variable "environment" {
-  description = "Environment name"
+variable "subnet_cidr" {
+  description = "CIDR block for subnet"
   type        = string
-  default     = "development"
+  default     = "10.0.1.0/24"
 }
 
-# Fallback Image Configuration
+variable "existing_subnet_id" {
+  description = "Existing subnet ID if not creating VCN"
+  type        = string
+  default     = ""
+}
+
+variable "assign_public_ip" {
+  description = "Whether to assign public IPs to instances"
+  type        = bool
+  default     = true
+}
+
+# Optional Fallback Variables
 variable "fallback_image_ocid" {
   description = "Fallback image OCID if dynamic lookup fails"
   type        = string
   default     = ""
+}
+
+# Tagging Variables
+variable "common_tags" {
+  description = "Common tags for all resources"
+  type        = map(string)
+  default = {
+    "ManagedBy" = "Terraform"
+    "Project"   = "Semaphore"
+  }
 }
