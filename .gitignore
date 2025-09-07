@@ -47,3 +47,7 @@ semaphore-database/
 tmp/
 temp/
 *.tmp
+
+
+# RooCode
+.roomodes
