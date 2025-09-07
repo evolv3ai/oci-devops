@@ -1,30 +1,25 @@
-# Example Terraform Variables
+# Oracle Cloud Infrastructure (OCI) Configuration
 # Copy this file to terraform.tfvars and fill in your actual values
 
 # OCI Authentication
-tenancy_ocid     = "ocid1.tenancy.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-user_ocid        = "ocid1.user.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-fingerprint      = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
-private_key_path = "/home/semaphore/.oci/oci_api_key.pem"
+tenancy_ocid     = "ocid1.tenancy.oc1..aaaaaaaaXXXXXXXXXXXXXXXXXXXXXXXX"
+user_ocid        = "ocid1.user.oc1..aaaaaaaaXXXXXXXXXXXXXXXXXXXXXXXX"
+fingerprint      = "XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX"
+private_key_path = "/oci/oci_api_key.pem"  # Path inside container
 region           = "us-ashburn-1"
-compartment_id   = "ocid1.compartment.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-# SSH Configuration
-ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... your-ssh-public-key-content-here"
+# Compartment for resources
+compartment_id = "ocid1.compartment.oc1..aaaaaaaaXXXXXXXXXXXXXXXXXXXXXXXX"
 
-# Instance Configuration
-instance_count       = 1
-instance_name_prefix = "semaphore-instance"
-instance_shape       = "VM.Standard.E2.1.Micro"  # Always Free tier
-assign_public_ip     = true
-environment          = "development"
+# Compute Instance Configuration
+instance_shape = "VM.Standard.E2.1.Micro"  # Free tier eligible
+instance_name  = "semaphore-worker"
 
-# Network Configuration
-create_vcn = true
+# SSH Key for Instance Access
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... your-key@example.com"
 
-# Tags
-common_tags = {
-  Environment = "development"
-  Project     = "semaphore-automation"
-  CreatedBy   = "terraform"
-}
+# Optional: Custom VCN CIDR (default: 10.0.0.0/16)
+# vcn_cidr = "10.0.0.0/16"
+
+# Optional: Custom Subnet CIDR (default: 10.0.1.0/24)
+# subnet_cidr = "10.0.1.0/24"

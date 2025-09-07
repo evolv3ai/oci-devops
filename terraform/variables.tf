@@ -111,3 +111,11 @@ variable "environment" {
   type        = string
   default     = "development"
 }
+
+
+# Fallback Image Configuration
+variable "fallback_image_ocid" {
+  description = "Fallback image OCID if dynamic lookup fails"
+  type        = string
+  default     = ""
+}

@@ -1,142 +1,135 @@
-# Semaphore UI + Oracle Cloud Infrastructure Automation
+# Semaphore UI - Infrastructure Automation
 
-A complete Infrastructure as Code solution using Semaphore UI for orchestrating Terraform and Ansible to manage Oracle Cloud Infrastructure.
+## Overview
+This repository contains Terraform and Ansible templates for automating Oracle Cloud Infrastructure (OCI) deployments through Semaphore UI.
 
-## 🚀 Features
+## Quick Start
 
-- **Infrastructure Provisioning** with Terraform
-- **Configuration Management** with Ansible  
-- **Dynamic Variable Management** - Terraform outputs automatically feed into Ansible
-- **Integrated Workflow** - Seamless Terraform → Ansible pipeline
-- **Oracle Cloud Integration** - Optimized for OCI
+### Prerequisites
+- Semaphore UI installed and running
+- OCI account with configured CLI (`~/.oci/config`)
+- Git repository connected to Semaphore
+- Docker with volume mount for OCI config
 
-## 📁 Project Structure
+### Setup
+
+1. **Configure Docker Volume**
+   Add to your `docker-compose.yml`:
+   ```yaml
+   services:
+     semaphore:
+       volumes:
+         - ~/.oci:/oci:ro  # Mount OCI config as read-only
+   ```
+
+2. **Create Terraform Template**
+   - Type: `terraform`
+   - Directory: `terraform/`
+   - Environment Variable: `TF_VAR_oci_cli_config = /oci/config`
+
+3. **Create Ansible Template**
+   - Type: `ansible`  
+   - Playbook: `ansible/playbooks/configure-instance.yml`
+   - Inventory: Select from Key Store
+
+4. **Run Templates**
+   - Execute Terraform first to provision infrastructure
+   - Run Ansible to configure deployed resources
+
+## Project Structure
 
 ```
-├── README.md                 # This file
-├── docker-compose.yml        # Semaphore UI deployment
-├── terraform/               # Terraform configurations
-│   ├── main.tf              # Main infrastructure code
-│   ├── variables.tf         # Input variables
-│   ├── outputs.tf           # Output values
-│   └── cloud-init.yml       # Instance initialization
-├── ansible/                 # Ansible playbooks
-│   └── configure-oci-basic.yml
-├── scripts/                 # PowerShell automation scripts
-│   ├── api-test.ps1         # Test Semaphore API
-│   ├── setup-inventory.ps1  # Create inventory via API
-│   ├── update-inventory.ps1 # Update inventory with IPs
-│   └── fix-ssh.sh          # Fix SSH authentication
-└── docs/                   # Documentation
-    ├── ssh-key-generation-fix.md
-    ├── oci-inventory-setup.md
-    ├── semaphore-terraform-workflow.md
-    └── missing-terraform-vars.md
+semaphore-ui/
+├── terraform/           # Infrastructure as Code
+│   ├── main.tf         # Resource definitions
+│   ├── variables.tf    # Variable declarations
+│   ├── outputs.tf      # Output values
+│   └── terraform.tfvars.example
+├── ansible/            # Configuration Management
+│   ├── playbooks/      # Ansible playbooks
+│   └── inventory/      # Host inventories
+├── docs/               # Documentation
+│   ├── semaphore-terraform-template.md
+│   ├── semaphore-ansible-template.md
+│   └── context7-integration.md
+└── docker-compose.yml  # Semaphore configuration
 ```
 
-## 🏗️ Architecture
+## Documentation
 
-```
-Terraform (Build) → Provision OCI → Capture Outputs → Update Variables → Ansible (Deploy) → Configure Instances
-```
+- [Terraform Template Guide](docs/semaphore-terraform-template.md) - Complete Terraform setup
+- [Ansible Template Guide](docs/semaphore-ansible-template.md) - Ansible configuration
+- [Context7 Integration](docs/context7-integration.md) - Documentation lookup tool
 
-## ⚡ Quick Start
+## Simple Working Configuration
 
-### 1. Deploy Semaphore UI
+### Terraform Authentication (Proven Method)
+1. Mount OCI config: `~/.oci:/oci:ro` in Docker
+2. Set environment variable: `TF_VAR_oci_cli_config = /oci/config`
+3. Use Terraform template type (not shell/bash)
+
+### Key Points
+- ✅ Use Terraform template type directly
+- ✅ Single environment variable needed
+- ✅ OCI config mounted via Docker
+- ❌ No wrapper scripts required
+- ❌ No complex shell commands needed
+
+## Common Tasks
+
+### Deploy Infrastructure
 ```bash
-docker compose up -d
-```
-Access: http://localhost:3001
-
-### 2. Configure Authentication
-- Create SSH keys for OCI instances
-- Add OCI API credentials
-- Set up Semaphore Key Store
-
-### 3. Set Up Variable Groups
-- **oci-terraform-vars**: Terraform configuration
-- **oci-ansible-vars**: Ansible variables
-
-### 4. Create Templates
-- **Terraform Template**: Provision infrastructure
-- **Ansible Template**: Configure instances
-
-### 5. Run Workflow
-1. Execute Terraform template → Creates OCI infrastructure
-2. Terraform outputs update Semaphore variables
-3. Execute Ansible template → Configures instances
-
-## 📋 Prerequisites
-
-- Docker and Docker Compose
-- Oracle Cloud Infrastructure account
-- OCI API keys and credentials
-- SSH key pair for instance access
-
-## 🔧 Configuration
-
-### Required Environment Variables (Terraform)
-```
-TF_VAR_tenancy_ocid      # OCI Tenancy OCID
-TF_VAR_user_ocid         # OCI User OCID  
-TF_VAR_fingerprint       # API Key Fingerprint
-TF_VAR_region            # OCI Region
-TF_VAR_private_key_path  # Path to OCI private key
-TF_VAR_compartment_id    # Compartment OCID
-TF_VAR_ssh_public_key    # SSH public key content
+# Via Semaphore UI
+1. Navigate to Templates
+2. Select "OCI Terraform Deploy"
+3. Click "Run Task"
 ```
 
-### Ansible Variables (Captured from Terraform)
-```json
-{
-  "OCI_INSTANCE_IP": "{{ terraform_outputs.primary_public_ip }}",
-  "OCI_PRIVATE_IP": "{{ terraform_outputs.primary_private_ip }}",
-  "OCI_INSTANCE_ID": "{{ terraform_outputs.primary_instance_id }}"
-}
+### Configure Instances
+```bash
+# Via Semaphore UI
+1. Navigate to Templates
+2. Select "OCI Configuration Management"
+3. Click "Run Task"
 ```
 
-## 📖 Documentation
+### Troubleshooting
 
-- **[SSH Key Setup](docs/ssh-key-generation-fix.md)** - Fix SSH authentication issues
-- **[Inventory Configuration](docs/oci-inventory-setup.md)** - Set up dynamic inventory
-- **[Terraform Workflow](docs/semaphore-terraform-workflow.md)** - Complete integration guide
-- **[Missing Variables](docs/missing-terraform-vars.md)** - Required Terraform variables
+**Image Selection Error**
+- Update filters in `data.oci_core_images`
+- Verify shape compatibility
+- Check operating system version
 
-## 🔨 Scripts
+**Authentication Issues**
+- Verify `~/.oci/config` exists
+- Check Docker volume mount
+- Ensure environment variable is set
 
-- **[api-test.ps1](scripts/api-test.ps1)** - Test Semaphore API connectivity
-- **[setup-inventory.ps1](scripts/setup-inventory.ps1)** - Create inventory via API
-- **[update-inventory.ps1](scripts/update-inventory.ps1)** - Update inventory with new IPs
-- **[fix-ssh.sh](scripts/fix-ssh.sh)** - Fix container SSH directory structure
+## Security
 
-## 🎯 Benefits
+- Never commit `terraform.tfvars` with real values
+- Store sensitive data in Semaphore Variable Groups
+- Use Semaphore Key Store for SSH keys
+- Enable audit logging for compliance
 
-✅ **Infrastructure as Code** - All infrastructure defined and version controlled  
-✅ **Dynamic Variables** - Automatic IP capture and inventory updates  
-✅ **Integrated Workflow** - Seamless Terraform to Ansible pipeline  
-✅ **Oracle Cloud Optimized** - Purpose-built for OCI  
-✅ **Repeatable Deployments** - Consistent environment provisioning  
-✅ **Web UI Management** - Easy-to-use Semaphore interface  
+## Contributing
 
-## 🤝 Contributing
+1. Test changes in development environment
+2. Update documentation for new features
+3. Follow existing code patterns
+4. Submit pull request with clear description
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test the workflow
-5. Submit a pull request
+## Support
 
-## 📄 License
+- [Semaphore UI Documentation](https://docs.semaphoreui.com/)
+- [OCI Terraform Provider](https://registry.terraform.io/providers/oracle/oci/latest/docs)
+- [OCI Ansible Collection](https://docs.oracle.com/en-us/iaas/tools/oci-ansible-collection/latest/)
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## License
 
-## 🆘 Support
-
-- Check the [documentation](docs/) for detailed guides
-- Review the [workflow guide](docs/semaphore-terraform-workflow.md) for complete setup
-- Ensure all [required variables](docs/missing-terraform-vars.md) are configured
+MIT License - See LICENSE file for details
 
 ---
 
-**Built with ❤️ for Infrastructure as Code automation**
-# oci-devops
+*Version: 1.0.0*
+*Last Updated: November 2024*

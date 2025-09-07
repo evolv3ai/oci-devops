@@ -30,14 +30,40 @@ data "oci_identity_availability_domains" "ads" {
 }
 
 data "oci_core_images" "oracle_linux" {
-  compartment_id   = var.compartment_id
-  operating_system = "Oracle Linux"
+  compartment_id = var.compartment_id
   
   filter {
-    name   = "display_name"
-    values = ["Oracle-Linux-8.8-2023.*"]
-    regex  = true
+    name   = "operating_system"
+    values = ["Oracle Linux"]
   }
+  
+  filter {
+    name   = "operating_system_version"
+    values = ["8.9", "8.8", "9.3"]  # Current stable versions
+  }
+  
+  filter {
+    name   = "shape"
+    values = [var.instance_shape]  # Must match the instance shape
+  }
+  
+  filter {
+    name   = "state"
+    values = ["AVAILABLE"]
+  }
+  
+  sort_by    = "TIMECREATED"
+  sort_order = "DESC"
+}
+
+# Safely handle image selection with fallback
+locals {
+  # Use first available image or fallback to a specific OCID if needed
+  instance_image_id = length(data.oci_core_images.oracle_linux.images) > 0 ? (
+    data.oci_core_images.oracle_linux.images[0].id
+  ) : (
+    var.fallback_image_ocid != "" ? var.fallback_image_ocid : ""
+  )
 }
 
 # Create VCN if it doesn't exist
@@ -167,7 +193,7 @@ resource "oci_core_instance" "semaphore_instance" {
 
   source_details {
     source_type = "image"
-    source_id   = data.oci_core_images.oracle_linux.images[0].id
+    source_id   = local.instance_image_id
   }
 
   metadata = {
