@@ -1,142 +1,50 @@
-# Terraform Outputs - These will be captured by Semaphore
+# Outputs - Workspace aware
 
-# Instance Information
-output "kasm_instance_id" {
-  description = "OCID of the KASM instance"
-  value       = oci_core_instance.kasm.id
+# General Outputs
+output "current_workspace" {
+  value       = terraform.workspace
+  description = "Current Terraform workspace"
 }
 
-output "coolify_instance_id" {
-  description = "OCID of the Coolify instance"
-  value       = oci_core_instance.coolify.id
+output "workspace_config" {
+  value       = local.current_config
+  description = "Configuration for current workspace"
 }
 
-output "instance_public_ips" {
-  description = "Public IP addresses of the instances"
-  value       = [oci_core_instance.kasm.public_ip, oci_core_instance.coolify.public_ip]
-}
-
-output "instance_private_ips" {
-  description = "Private IP addresses of the instances"
-  value       = [oci_core_instance.kasm.private_ip, oci_core_instance.coolify.private_ip]
-}
-
-output "instance_display_names" {
-  description = "Display names of the instances"
-  value       = ["kasm-server", "coolify-server"]
-}
-
-output "kasm_public_ip" {
-  description = "Public IP of the KASM instance"
-  value       = oci_core_instance.kasm.public_ip
-}
-
-output "coolify_public_ip" {
-  description = "Public IP of the Coolify instance"
-  value       = oci_core_instance.coolify.public_ip
-}
-
-output "kasm_private_ip" {
-  description = "Private IP of the KASM instance"
-  value       = oci_core_instance.kasm.private_ip
-}
-
-output "coolify_private_ip" {
-  description = "Private IP of the Coolify instance"
-  value       = oci_core_instance.coolify.private_ip
-}
-
-# Primary instance outputs (KASM as primary)
-output "primary_instance_id" {
-  description = "OCID of the primary (KASM) instance"
-  value       = oci_core_instance.kasm.id
-}
-
-output "primary_public_ip" {
-  description = "Public IP of the primary (KASM) instance"
-  value       = oci_core_instance.kasm.public_ip
-}
-
-output "primary_private_ip" {
-  description = "Private IP of the primary (KASM) instance"
-  value       = oci_core_instance.kasm.private_ip
-}
-
-# Network Information
+# VCN Outputs (when VCN is deployed)
 output "vcn_id" {
+  value       = local.current_config.deploy_vcn ? oci_core_vcn.main[0].id : "N/A - VCN not deployed in this workspace"
   description = "OCID of the VCN"
-  value       = var.create_vcn ? oci_core_vcn.semaphore_vcn[0].id : null
 }
 
-output "subnet_id" {
-  description = "OCID of the subnet"
-  value       = var.create_vcn ? oci_core_subnet.semaphore_subnet[0].id : var.existing_subnet_id
+output "vcn_name" {
+  value       = local.current_config.deploy_vcn ? oci_core_vcn.main[0].display_name : "N/A - VCN not deployed in this workspace"
+  description = "Display name of the VCN"
 }
 
-# Ansible Inventory Variables (JSON format for Semaphore)
-output "ansible_inventory_vars" {
-  description = "Variables for Ansible inventory in JSON format"
-  value = jsonencode({
-    oci_instance_ips    = [oci_core_instance.kasm.public_ip, oci_core_instance.coolify.public_ip]
-    oci_private_ips     = [oci_core_instance.kasm.private_ip, oci_core_instance.coolify.private_ip]
-    oci_instance_ids    = [oci_core_instance.kasm.id, oci_core_instance.coolify.id]
-    oci_display_names   = ["kasm-server", "coolify-server"]
-    primary_public_ip   = oci_core_instance.kasm.public_ip
-    primary_private_ip  = oci_core_instance.kasm.private_ip
-    kasm_public_ip      = oci_core_instance.kasm.public_ip
-    kasm_private_ip     = oci_core_instance.kasm.private_ip
-    coolify_public_ip   = oci_core_instance.coolify.public_ip
-    coolify_private_ip  = oci_core_instance.coolify.private_ip
-    instance_count      = 2
-    environment         = var.environment
-    region              = var.region
-  })
+output "vcn_cidr" {
+  value       = local.current_config.deploy_vcn ? oci_core_vcn.main[0].cidr_blocks[0] : "N/A - VCN not deployed in this workspace"
+  description = "CIDR block of the VCN"
 }
 
-# SSH Connection Commands
-output "ssh_commands" {
-  description = "SSH commands to connect to instances"
-  value = [
-    "ssh -i ~/.ssh/semaphore-oci-key opc@${oci_core_instance.kasm.public_ip}",
-    "ssh -i ~/.ssh/semaphore-oci-key opc@${oci_core_instance.coolify.public_ip}"
-  ]
+# Compute Outputs (when compute is deployed)
+output "instance_public_ip" {
+  value       = local.current_config.deploy_compute ? oci_core_instance.semaphore[0].public_ip : "N/A - Compute not deployed in this workspace"
+  description = "Public IP of Semaphore instance"
 }
 
-# Semaphore Environment Variables (for updating Semaphore)
-output "semaphore_env_vars" {
-  description = "Environment variables to update in Semaphore"
+output "instance_id" {
+  value       = local.current_config.deploy_compute ? oci_core_instance.semaphore[0].id : "N/A - Compute not deployed in this workspace"
+  description = "OCID of Semaphore instance"
+}
+
+# Status Output
+output "deployment_status" {
   value = {
-    TF_VAR_kasm_public_ip     = oci_core_instance.kasm.public_ip
-    TF_VAR_kasm_private_ip    = oci_core_instance.kasm.private_ip
-    TF_VAR_coolify_public_ip  = oci_core_instance.coolify.public_ip
-    TF_VAR_coolify_private_ip = oci_core_instance.coolify.private_ip
-    TF_VAR_primary_public_ip  = oci_core_instance.kasm.public_ip
-    TF_VAR_primary_private_ip = oci_core_instance.kasm.private_ip
-    TF_VAR_instance_count     = 2
-    TF_VAR_region             = var.region
-    TF_VAR_environment        = var.environment
+    workspace     = terraform.workspace
+    vcn_deployed  = local.current_config.deploy_vcn
+    compute_deployed = local.current_config.deploy_compute
+    message = terraform.workspace == "test-vcn-only" ? "SUCCESS - Test VCN deployment only (authentication validated)" : "Full infrastructure deployment for ${terraform.workspace}"
   }
-}
-
-# Instance State
-output "instance_state" {
-  description = "State of the instances"
-  value       = [oci_core_instance.kasm.state, oci_core_instance.coolify.state]
-}
-
-# Availability Domain
-output "availability_domain" {
-  description = "Availability domain of the instances"
-  value       = data.oci_identity_availability_domains.ads.availability_domains[0].name
-}
-
-# Volume Information
-output "kasm_volume_id" {
-  description = "OCID of the KASM block volume"
-  value       = oci_core_volume.kasm_volume.id
-}
-
-output "coolify_volume_id" {
-  description = "OCID of the Coolify block volume"
-  value       = oci_core_volume.coolify_volume.id
+  description = "Deployment status for current workspace"
 }
