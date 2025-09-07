@@ -1,0 +1,61 @@
+---
+# Simple Ansible Test - OCI Connection Validation
+# Purpose: Validate Ansible can authenticate to OCI
+
+- name: Test OCI Connection and Authentication
+  hosts: localhost
+  gather_facts: no
+  
+  vars:
+    oci_config_file: "{{ lookup('env', 'OCI_CONFIG_FILE') | default('/oci/config') }}"
+    compartment_id: "{{ lookup('env', 'TF_VAR_compartment_id') }}"
+  
+  tasks:
+    - name: Display test information
+      debug:
+        msg:
+          - "Testing OCI authentication for Ansible"
+          - "OCI Config File: {{ oci_config_file }}"
+          - "Compartment ID: {{ compartment_id }}"
+    
+    - name: Check if OCI config file exists
+      stat:
+        path: "{{ oci_config_file }}"
+      register: config_file
+    
+    - name: Display config file status
+      debug:
+        msg: "OCI config file {{ 'exists' if config_file.stat.exists else 'NOT FOUND' }}"
+    
+    - name: Test OCI CLI - List compartments
+      command: oci iam compartment list -c {{ compartment_id }} --config-file {{ oci_config_file }}
+      register: compartments
+      ignore_errors: yes
+      environment:
+        OCI_CONFIG_FILE: "{{ oci_config_file }}"
+    
+    - name: Display OCI CLI test result
+      debug:
+        msg: 
+          - "OCI CLI Test: {{ 'SUCCESS' if compartments.rc == 0 else 'FAILED' }}"
+          - "{{ compartments.stderr if compartments.rc != 0 else 'Authentication successful!' }}"
+    
+    - name: Test OCI Python SDK (if available)
+      block:
+        - name: Check OCI Python SDK
+          command: python3 -c "import oci; print('OCI SDK available')"
+          register: sdk_check
+          ignore_errors: yes
+        
+        - name: Display SDK status
+          debug:
+            msg: "OCI Python SDK: {{ 'Available' if sdk_check.rc == 0 else 'Not installed' }}"
+      when: true
+    
+    - name: Summary
+      debug:
+        msg:
+          - "===== TEST SUMMARY ====="
+          - "Config File: {{ 'FOUND' if config_file.stat.exists else 'MISSING' }}"
+          - "OCI CLI: {{ 'WORKING' if compartments.rc == 0 else 'FAILED' }}"
+          - "Ready for infrastructure management: {{ 'YES' if compartments.rc == 0 else 'NO' }}"
